@@ -4,7 +4,8 @@ import {
   ArrowLeft, Shield, Users, UserCheck, UserX, Plus, Pencil, Trash2, 
   Search, Filter, Star, Clock, Phone, MessageCircle, Eye, Check, X,
   Sparkles, BadgeCheck, IndianRupee, Languages, ToggleLeft, ToggleRight,
-  Upload, Camera, Bot, Brain, AlertCircle, Mail, CheckCircle, XCircle
+  Upload, Camera, Bot, Brain, AlertCircle, Mail, CheckCircle, XCircle,
+  CheckSquare, Square, MinusSquare
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +83,8 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("providers");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if current user is admin
@@ -346,6 +350,100 @@ const AdminPanel = () => {
     }
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredProviders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredProviders.map(p => p.id)));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkToggleOnline = async (setOnline: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkActionLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('jotshi_profiles')
+        .update({ is_online: setOnline })
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      setProviders(prev => prev.map(p => 
+        selectedIds.has(p.id) ? { ...p, is_online: setOnline } : p
+      ));
+      toast.success(`${selectedIds.size} provider(s) set to ${setOnline ? 'online' : 'offline'}`);
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Bulk update error:", error);
+      toast.error("Failed to update providers");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkToggleVerified = async (setVerified: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkActionLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('jotshi_profiles')
+        .update({ verified: setVerified })
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      setProviders(prev => prev.map(p => 
+        selectedIds.has(p.id) ? { ...p, verified: setVerified } : p
+      ));
+      toast.success(`${selectedIds.size} provider(s) ${setVerified ? 'verified' : 'unverified'}`);
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Bulk update error:", error);
+      toast.error("Failed to update providers");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} provider(s)? This action cannot be undone.`)) return;
+    
+    setBulkActionLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('jotshi_profiles')
+        .delete()
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      setProviders(prev => prev.filter(p => !selectedIds.has(p.id)));
+      toast.success(`${selectedIds.size} provider(s) deleted`);
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      toast.error("Failed to delete providers");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -579,6 +677,91 @@ const AdminPanel = () => {
               </SpiritualButton>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.size > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/30"
+              >
+                <div className="flex items-center gap-2 mr-4">
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    {selectedIds.size} selected
+                  </span>
+                </div>
+                <SpiritualButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkToggleOnline(true)}
+                  disabled={bulkActionLoading}
+                >
+                  <ToggleRight className="w-4 h-4 mr-1 text-green-500" />
+                  Set Online
+                </SpiritualButton>
+                <SpiritualButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkToggleOnline(false)}
+                  disabled={bulkActionLoading}
+                >
+                  <ToggleLeft className="w-4 h-4 mr-1" />
+                  Set Offline
+                </SpiritualButton>
+                <SpiritualButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkToggleVerified(true)}
+                  disabled={bulkActionLoading}
+                >
+                  <BadgeCheck className="w-4 h-4 mr-1 text-secondary" />
+                  Verify
+                </SpiritualButton>
+                <SpiritualButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkToggleVerified(false)}
+                  disabled={bulkActionLoading}
+                >
+                  <UserX className="w-4 h-4 mr-1" />
+                  Unverify
+                </SpiritualButton>
+                <SpiritualButton
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </SpiritualButton>
+                <SpiritualButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={bulkActionLoading}
+                >
+                  <X className="w-4 h-4" />
+                  Clear
+                </SpiritualButton>
+              </motion.div>
+            )}
+
+            {/* Select All Header */}
+            {filteredProviders.length > 0 && (
+              <div className="flex items-center gap-3 px-2">
+                <Checkbox
+                  checked={selectedIds.size === filteredProviders.length && filteredProviders.length > 0}
+                  onCheckedChange={handleSelectAll}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size === filteredProviders.length ? 'Deselect all' : 'Select all'}
+                </span>
+              </div>
+            )}
+
             {/* Providers List */}
             <div className="space-y-3">
               {filteredProviders.length === 0 ? (
@@ -596,11 +779,19 @@ const AdminPanel = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
                   >
-                    <SpiritualCard variant="elevated" className="border border-border/30">
+                    <SpiritualCard 
+                      variant="elevated" 
+                      className={`border ${selectedIds.has(provider.id) ? 'border-primary/50 bg-primary/5' : 'border-border/30'}`}
+                    >
                       <SpiritualCardContent className="p-4">
                         <div className="flex flex-col sm:flex-row gap-4">
-                          {/* Avatar & Status */}
+                          {/* Checkbox & Avatar & Status */}
                           <div className="flex items-start gap-4 flex-1">
+                            <Checkbox
+                              checked={selectedIds.has(provider.id)}
+                              onCheckedChange={() => handleSelectOne(provider.id)}
+                              className="mt-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
                             <div className="relative">
                               <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-spiritual flex items-center justify-center">
                                 {provider.avatar_url ? (
