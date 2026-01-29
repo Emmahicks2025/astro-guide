@@ -16,6 +16,9 @@ import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-c
 import { SpiritualButton } from "@/components/ui/spiritual-button";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { toast } from "sonner";
+import NorthIndianKundliChart from "@/components/kundli/NorthIndianKundliChart";
+import { generateSampleKundli } from "@/lib/kundli";
+import JotshiConsultationPanel from "./JotshiConsultationPanel";
 
 // Mock data for active users
 const activeUsers = [
@@ -28,6 +31,8 @@ const activeUsers = [
     birthPlace: 'Delhi, India',
     waitTime: '2 min',
     status: 'waiting',
+    gender: 'female',
+    birthTimeExactness: 'exact',
   },
   {
     id: '2',
@@ -38,6 +43,8 @@ const activeUsers = [
     birthPlace: 'Mumbai, Maharashtra',
     waitTime: '5 min',
     status: 'waiting',
+    gender: 'male',
+    birthTimeExactness: 'approximate',
   },
   {
     id: '3',
@@ -48,6 +55,8 @@ const activeUsers = [
     birthPlace: 'Ahmedabad, Gujarat',
     waitTime: '8 min',
     status: 'waiting',
+    gender: 'female',
+    birthTimeExactness: 'exact',
   },
 ];
 
@@ -55,6 +64,7 @@ const JotshiDashboard = () => {
   const { resetOnboarding } = useOnboardingStore();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [activeConsultation, setActiveConsultation] = useState<typeof activeUsers[0] | null>(null);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -68,6 +78,16 @@ const JotshiDashboard = () => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
+
+  // If in active consultation, show the consultation panel
+  if (activeConsultation) {
+    return (
+      <JotshiConsultationPanel 
+        user={activeConsultation}
+        onBack={() => setActiveConsultation(null)}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -162,89 +182,100 @@ const JotshiDashboard = () => {
           </div>
 
           <div className="space-y-3">
-            {activeUsers.map((user, index) => (
-              <motion.div
-                key={user.id}
-                variants={itemVariants}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <SpiritualCard
-                  variant={selectedUser === user.id ? "spiritual" : "elevated"}
-                  interactive
-                  className="overflow-hidden"
-                  onClick={() => setSelectedUser(user.id)}
+            {activeUsers.map((user, index) => {
+              const kundliData = generateSampleKundli(new Date(user.birthDate), user.birthTime, user.birthPlace);
+              
+              return (
+                <motion.div
+                  key={user.id}
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <SpiritualCardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold">{user.name}</h4>
-                        <span className="text-sm text-primary">{user.concern}</span>
+                  <SpiritualCard
+                    variant={selectedUser === user.id ? "spiritual" : "elevated"}
+                    interactive
+                    className="overflow-hidden"
+                    onClick={() => setSelectedUser(selectedUser === user.id ? null : user.id)}
+                  >
+                    <SpiritualCardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold">{user.name}</h4>
+                          <span className="text-sm text-primary">{user.concern}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          {user.waitTime}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        {user.waitTime}
+                      
+                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground mb-3">
+                        <div>
+                          <span className="block font-medium text-foreground">Birth Date</span>
+                          {user.birthDate}
+                        </div>
+                        <div>
+                          <span className="block font-medium text-foreground">Time</span>
+                          {user.birthTime}
+                          {user.birthTimeExactness !== 'exact' && (
+                            <span className="text-yellow-600"> ~</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="block font-medium text-foreground">Place</span>
+                          {user.birthPlace}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground mb-3">
-                      <div>
-                        <span className="block font-medium text-foreground">Birth Date</span>
-                        {user.birthDate}
-                      </div>
-                      <div>
-                        <span className="block font-medium text-foreground">Time</span>
-                        {user.birthTime}
-                      </div>
-                      <div>
-                        <span className="block font-medium text-foreground">Place</span>
-                        {user.birthPlace}
-                      </div>
-                    </div>
 
-                    {selectedUser === user.id && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="pt-3 border-t border-border space-y-3"
-                      >
-                        {/* Placeholder for Kundli Chart */}
-                        <div className="bg-muted rounded-xl p-4 text-center">
-                          <Star className="w-8 h-8 mx-auto mb-2 text-accent" />
-                          <p className="text-sm font-medium">Janam Kundli</p>
-                          <p className="text-xs text-muted-foreground">Chart will appear here</p>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <SpiritualButton 
-                            variant="primary" 
-                            size="lg" 
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toast.success(`Starting chat with ${user.name}`);
-                            }}
-                          >
-                            <MessageCircle className="w-5 h-5" />
-                            Start Chat
-                          </SpiritualButton>
-                          <SpiritualButton 
-                            variant="outline" 
-                            size="lg"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toast.info("View full chart coming soon!");
-                            }}
-                          >
-                            <ChevronRight className="w-5 h-5" />
-                          </SpiritualButton>
-                        </div>
-                      </motion.div>
-                    )}
-                  </SpiritualCardContent>
-                </SpiritualCard>
-              </motion.div>
-            ))}
+                      {selectedUser === user.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="pt-3 border-t border-border space-y-3"
+                        >
+                          {/* Live Kundli Chart Preview */}
+                          <div className="flex justify-center">
+                            <NorthIndianKundliChart data={kundliData} size={180} showLabels={false} />
+                          </div>
+                          <div className="text-center text-sm">
+                            <span className="text-primary font-medium">{kundliData.lagnaSign}</span>
+                            <span className="text-muted-foreground"> Lagna • </span>
+                            <span className="text-accent">{kundliData.nakshatras.moon}</span>
+                            <span className="text-muted-foreground"> Nakshatra</span>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <SpiritualButton 
+                              variant="primary" 
+                              size="lg" 
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveConsultation(user);
+                              }}
+                            >
+                              <MessageCircle className="w-5 h-5" />
+                              Start Consultation
+                            </SpiritualButton>
+                            <SpiritualButton 
+                              variant="outline" 
+                              size="lg"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveConsultation(user);
+                              }}
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </SpiritualButton>
+                          </div>
+                        </motion.div>
+                      )}
+                    </SpiritualCardContent>
+                  </SpiritualCard>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.section>
 

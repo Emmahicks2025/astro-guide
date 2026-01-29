@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 
+export interface PartnerDetails {
+  name: string;
+  dateOfBirth: string;
+  timeOfBirth: string;
+  placeOfBirth: string;
+}
+
 export interface UserData {
   fullName: string;
   gender: 'male' | 'female' | 'other' | '';
@@ -8,6 +15,11 @@ export interface UserData {
   placeOfBirth: string;
   purpose: string;
   role: 'user' | 'jotshi';
+  // New professional fields
+  birthTimeExactness: 'exact' | 'approximate' | 'unknown' | '';
+  majorConcern: string;
+  relationshipStatus: 'single' | 'dating' | 'engaged' | 'married' | 'separated' | '';
+  partnerDetails: PartnerDetails | null;
 }
 
 interface OnboardingStore {
@@ -32,6 +44,10 @@ export const useOnboardingStore = create<OnboardingStore>((set) => ({
     placeOfBirth: '',
     purpose: '',
     role: 'user',
+    birthTimeExactness: '',
+    majorConcern: '',
+    relationshipStatus: '',
+    partnerDetails: null,
   },
   isComplete: false,
   setStep: (step) => set({ currentStep: step }),
@@ -53,6 +69,10 @@ export const useOnboardingStore = create<OnboardingStore>((set) => ({
         placeOfBirth: '',
         purpose: '',
         role: 'user',
+        birthTimeExactness: '',
+        majorConcern: '',
+        relationshipStatus: '',
+        partnerDetails: null,
       },
       isComplete: false,
     }),
