@@ -61,48 +61,60 @@ export type Database = {
       }
       jotshi_profiles: {
         Row: {
+          avatar_url: string | null
           bio: string | null
+          category: string | null
           created_at: string
+          display_name: string | null
           experience_years: number | null
           hourly_rate: number | null
           id: string
           is_online: boolean | null
+          languages: string[] | null
           rating: number | null
           specialty: string | null
           total_earnings: number | null
           total_sessions: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           verified: boolean | null
         }
         Insert: {
+          avatar_url?: string | null
           bio?: string | null
+          category?: string | null
           created_at?: string
+          display_name?: string | null
           experience_years?: number | null
           hourly_rate?: number | null
           id?: string
           is_online?: boolean | null
+          languages?: string[] | null
           rating?: number | null
           specialty?: string | null
           total_earnings?: number | null
           total_sessions?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           verified?: boolean | null
         }
         Update: {
+          avatar_url?: string | null
           bio?: string | null
+          category?: string | null
           created_at?: string
+          display_name?: string | null
           experience_years?: number | null
           hourly_rate?: number | null
           id?: string
           is_online?: boolean | null
+          languages?: string[] | null
           rating?: number | null
           specialty?: string | null
           total_earnings?: number | null
           total_sessions?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           verified?: boolean | null
         }
         Relationships: []
