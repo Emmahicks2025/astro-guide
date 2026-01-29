@@ -1,0 +1,609 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowLeft, Shield, Users, UserCheck, UserX, Plus, Pencil, Trash2, 
+  Search, Filter, Star, Clock, Phone, MessageCircle, Eye, Check, X,
+  Sparkles, BadgeCheck, IndianRupee, Languages, ToggleLeft, ToggleRight
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
+import { SpiritualButton } from "@/components/ui/spiritual-button";
+import { SpiritualInput } from "@/components/ui/spiritual-input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
+interface JotshiProfile {
+  id: string;
+  user_id: string;
+  specialty: string | null;
+  experience_years: number | null;
+  hourly_rate: number | null;
+  bio: string | null;
+  is_online: boolean | null;
+  verified: boolean | null;
+  rating: number | null;
+  total_sessions: number | null;
+  total_earnings: number | null;
+  created_at: string;
+  updated_at: string;
+  // Joined profile data
+  profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
+interface NewProviderForm {
+  email: string;
+  full_name: string;
+  specialty: string;
+  experience_years: number;
+  hourly_rate: number;
+  bio: string;
+  is_online: boolean;
+  verified: boolean;
+}
+
+const specialties = [
+  "Vedic Astrology",
+  "Nadi Astrology",
+  "KP Astrology",
+  "Lal Kitab",
+  "Palmistry",
+  "Numerology",
+  "Tarot Reading",
+  "Vastu Shastra",
+  "Marriage Counseling",
+  "Relationship Expert",
+  "Kundli Matching",
+  "Dasha Analysis",
+  "Remedial Astrology"
+];
+
+const AdminPanel = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [providers, setProviders] = useState<JotshiProfile[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "online" | "offline" | "verified" | "unverified">("all");
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<JotshiProfile | null>(null);
+  const [activeTab, setActiveTab] = useState("providers");
+  
+  const [newProvider, setNewProvider] = useState<NewProviderForm>({
+    email: "",
+    full_name: "",
+    specialty: "",
+    experience_years: 0,
+    hourly_rate: 20,
+    bio: "",
+    is_online: false,
+    verified: false
+  });
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+      if (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data === true);
+      }
+      setLoading(false);
+    };
+
+    checkAdminStatus();
+  }, [user]);
+
+  // Fetch all providers
+  useEffect(() => {
+    const fetchProviders = async () => {
+      if (!isAdmin) return;
+
+      const { data, error } = await supabase
+        .from('jotshi_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching providers:", error);
+        toast.error("Failed to load providers");
+      } else {
+        setProviders(data || []);
+      }
+    };
+
+    fetchProviders();
+  }, [isAdmin]);
+
+  const filteredProviders = providers.filter(provider => {
+    const matchesSearch = provider.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         provider.bio?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (filterStatus === "all") return matchesSearch;
+    if (filterStatus === "online") return matchesSearch && provider.is_online;
+    if (filterStatus === "offline") return matchesSearch && !provider.is_online;
+    if (filterStatus === "verified") return matchesSearch && provider.verified;
+    if (filterStatus === "unverified") return matchesSearch && !provider.verified;
+    
+    return matchesSearch;
+  });
+
+  const handleToggleOnline = async (provider: JotshiProfile) => {
+    const { error } = await supabase
+      .from('jotshi_profiles')
+      .update({ is_online: !provider.is_online })
+      .eq('id', provider.id);
+
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      setProviders(prev => prev.map(p => 
+        p.id === provider.id ? { ...p, is_online: !p.is_online } : p
+      ));
+      toast.success(`Provider is now ${!provider.is_online ? 'online' : 'offline'}`);
+    }
+  };
+
+  const handleToggleVerified = async (provider: JotshiProfile) => {
+    const { error } = await supabase
+      .from('jotshi_profiles')
+      .update({ verified: !provider.verified })
+      .eq('id', provider.id);
+
+    if (error) {
+      toast.error("Failed to update verification");
+    } else {
+      setProviders(prev => prev.map(p => 
+        p.id === provider.id ? { ...p, verified: !p.verified } : p
+      ));
+      toast.success(`Provider ${!provider.verified ? 'verified' : 'unverified'}`);
+    }
+  };
+
+  const handleUpdateProvider = async () => {
+    if (!selectedProvider) return;
+
+    const { error } = await supabase
+      .from('jotshi_profiles')
+      .update({
+        specialty: selectedProvider.specialty,
+        experience_years: selectedProvider.experience_years,
+        hourly_rate: selectedProvider.hourly_rate,
+        bio: selectedProvider.bio,
+        is_online: selectedProvider.is_online,
+        verified: selectedProvider.verified
+      })
+      .eq('id', selectedProvider.id);
+
+    if (error) {
+      toast.error("Failed to update provider");
+    } else {
+      setProviders(prev => prev.map(p => 
+        p.id === selectedProvider.id ? selectedProvider : p
+      ));
+      setShowEditDialog(false);
+      toast.success("Provider updated successfully");
+    }
+  };
+
+  const handleDeleteProvider = async (providerId: string) => {
+    if (!confirm("Are you sure you want to delete this provider?")) return;
+
+    const { error } = await supabase
+      .from('jotshi_profiles')
+      .delete()
+      .eq('id', providerId);
+
+    if (error) {
+      toast.error("Failed to delete provider");
+    } else {
+      setProviders(prev => prev.filter(p => p.id !== providerId));
+      toast.success("Provider deleted successfully");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-4">
+        <Shield className="w-16 h-16 text-muted-foreground" />
+        <h2 className="text-xl font-semibold text-foreground">Authentication Required</h2>
+        <p className="text-muted-foreground text-center">Please sign in to access the admin panel.</p>
+        <SpiritualButton variant="primary" onClick={() => navigate('/auth')}>
+          Sign In
+        </SpiritualButton>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-4">
+        <Shield className="w-16 h-16 text-destructive" />
+        <h2 className="text-xl font-semibold text-foreground">Access Denied</h2>
+        <p className="text-muted-foreground text-center">You don't have permission to access this page.</p>
+        <SpiritualButton variant="outline" onClick={() => navigate('/')}>
+          Go Back Home
+        </SpiritualButton>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-background"
+    >
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
+          <SpiritualButton variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-5 h-5" />
+          </SpiritualButton>
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+              <Shield className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-display font-bold text-xl text-foreground">Admin Panel</h1>
+              <p className="text-xs text-muted-foreground">Manage service providers</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-5 space-y-5">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <SpiritualCard variant="elevated">
+            <SpiritualCardContent className="p-4 text-center">
+              <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
+              <p className="text-2xl font-bold text-foreground">{providers.length}</p>
+              <p className="text-xs text-muted-foreground">Total Providers</p>
+            </SpiritualCardContent>
+          </SpiritualCard>
+          <SpiritualCard variant="elevated">
+            <SpiritualCardContent className="p-4 text-center">
+              <UserCheck className="w-6 h-6 mx-auto mb-2 text-green-500" />
+              <p className="text-2xl font-bold text-foreground">{providers.filter(p => p.is_online).length}</p>
+              <p className="text-xs text-muted-foreground">Online Now</p>
+            </SpiritualCardContent>
+          </SpiritualCard>
+          <SpiritualCard variant="elevated">
+            <SpiritualCardContent className="p-4 text-center">
+              <BadgeCheck className="w-6 h-6 mx-auto mb-2 text-secondary" />
+              <p className="text-2xl font-bold text-foreground">{providers.filter(p => p.verified).length}</p>
+              <p className="text-xs text-muted-foreground">Verified</p>
+            </SpiritualCardContent>
+          </SpiritualCard>
+          <SpiritualCard variant="elevated">
+            <SpiritualCardContent className="p-4 text-center">
+              <IndianRupee className="w-6 h-6 mx-auto mb-2 text-gold" />
+              <p className="text-2xl font-bold text-foreground">
+                ₹{providers.reduce((sum, p) => sum + (p.total_earnings || 0), 0).toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">Total Earnings</p>
+            </SpiritualCardContent>
+          </SpiritualCard>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="providers">Service Providers</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="providers" className="space-y-4 mt-4">
+            {/* Search & Filter */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <SpiritualInput
+                  placeholder="Search providers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="unverified">Unverified</SelectItem>
+                </SelectContent>
+              </Select>
+              <SpiritualButton variant="primary" onClick={() => setShowAddDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Provider
+              </SpiritualButton>
+            </div>
+
+            {/* Providers List */}
+            <div className="space-y-3">
+              {filteredProviders.length === 0 ? (
+                <SpiritualCard variant="elevated">
+                  <SpiritualCardContent className="p-8 text-center">
+                    <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground">No providers found</p>
+                  </SpiritualCardContent>
+                </SpiritualCard>
+              ) : (
+                filteredProviders.map((provider, index) => (
+                  <motion.div
+                    key={provider.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                  >
+                    <SpiritualCard variant="elevated" className="border border-border/30">
+                      <SpiritualCardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          {/* Avatar & Status */}
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="relative">
+                              <div className="w-14 h-14 rounded-xl bg-gradient-spiritual flex items-center justify-center">
+                                <Sparkles className="w-6 h-6 text-primary-foreground" />
+                              </div>
+                              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
+                                provider.is_online ? 'bg-green-500' : 'bg-muted-foreground/40'
+                              }`} />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-foreground truncate">
+                                  Provider #{provider.id.slice(0, 8)}
+                                </h4>
+                                {provider.verified && (
+                                  <BadgeCheck className="w-4 h-4 text-secondary flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-sm text-secondary font-medium">{provider.specialty || 'No specialty'}</p>
+                              
+                              <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {provider.experience_years || 0} years
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Star className="w-3 h-3 text-gold fill-gold" />
+                                  {provider.rating || 0}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle className="w-3 h-3" />
+                                  {provider.total_sessions || 0} sessions
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <IndianRupee className="w-3 h-3" />
+                                  {provider.hourly_rate || 0}/min
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <SpiritualButton
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleOnline(provider)}
+                              className={provider.is_online ? 'text-green-500' : 'text-muted-foreground'}
+                            >
+                              {provider.is_online ? (
+                                <ToggleRight className="w-5 h-5" />
+                              ) : (
+                                <ToggleLeft className="w-5 h-5" />
+                              )}
+                            </SpiritualButton>
+                            <SpiritualButton
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleVerified(provider)}
+                              className={provider.verified ? 'text-secondary' : 'text-muted-foreground'}
+                            >
+                              <BadgeCheck className="w-5 h-5" />
+                            </SpiritualButton>
+                            <SpiritualButton
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProvider(provider);
+                                setShowEditDialog(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </SpiritualButton>
+                            <SpiritualButton
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteProvider(provider.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </SpiritualButton>
+                          </div>
+                        </div>
+                      </SpiritualCardContent>
+                    </SpiritualCard>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-4">
+            <SpiritualCard variant="elevated">
+              <SpiritualCardContent className="p-8 text-center">
+                <Sparkles className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Analytics Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  Detailed provider performance metrics, earnings reports, and consultation analytics will be available here.
+                </p>
+              </SpiritualCardContent>
+            </SpiritualCard>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Edit Provider Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Provider</DialogTitle>
+          </DialogHeader>
+          
+          {selectedProvider && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Specialty</Label>
+                <Select 
+                  value={selectedProvider.specialty || ""} 
+                  onValueChange={(v) => setSelectedProvider({ ...selectedProvider, specialty: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select specialty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialties.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Experience (years)</Label>
+                  <SpiritualInput
+                    type="number"
+                    value={selectedProvider.experience_years || 0}
+                    onChange={(e) => setSelectedProvider({ 
+                      ...selectedProvider, 
+                      experience_years: parseInt(e.target.value) || 0 
+                    })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Rate (₹/min)</Label>
+                  <SpiritualInput
+                    type="number"
+                    value={selectedProvider.hourly_rate || 0}
+                    onChange={(e) => setSelectedProvider({ 
+                      ...selectedProvider, 
+                      hourly_rate: parseInt(e.target.value) || 0 
+                    })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Bio</Label>
+                <Textarea
+                  value={selectedProvider.bio || ""}
+                  onChange={(e) => setSelectedProvider({ ...selectedProvider, bio: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={selectedProvider.is_online || false}
+                    onCheckedChange={(checked) => setSelectedProvider({ ...selectedProvider, is_online: checked })}
+                  />
+                  <Label>Online</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={selectedProvider.verified || false}
+                    onCheckedChange={(checked) => setSelectedProvider({ ...selectedProvider, verified: checked })}
+                  />
+                  <Label>Verified</Label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <SpiritualButton variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </SpiritualButton>
+            <SpiritualButton variant="primary" onClick={handleUpdateProvider}>
+              Save Changes
+            </SpiritualButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Provider Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Provider</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              To add a new provider, they must first create an account and register as a Jotshi. 
+              You can then verify and manage their profile here.
+            </p>
+            
+            <SpiritualCard variant="elevated" className="bg-muted/30">
+              <SpiritualCardContent className="p-4">
+                <h4 className="font-medium text-foreground mb-2">Provider Registration Flow:</h4>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>User creates account via /auth</li>
+                  <li>User registers as Jotshi via /jotshi-login</li>
+                  <li>Admin verifies profile here</li>
+                </ol>
+              </SpiritualCardContent>
+            </SpiritualCard>
+          </div>
+
+          <DialogFooter>
+            <SpiritualButton variant="outline" onClick={() => setShowAddDialog(false)}>
+              Close
+            </SpiritualButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
+  );
+};
+
+export default AdminPanel;
