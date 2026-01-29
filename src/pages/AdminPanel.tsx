@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 interface JotshiProfile {
   id: string;
-  user_id: string;
+  user_id: string | null;
   specialty: string | null;
   experience_years: number | null;
   hourly_rate: number | null;
@@ -33,11 +33,10 @@ interface JotshiProfile {
   total_earnings: number | null;
   created_at: string;
   updated_at: string;
-  // Joined profile data
-  profile?: {
-    full_name: string | null;
-    avatar_url: string | null;
-  };
+  display_name: string | null;
+  avatar_url: string | null;
+  category: string | null;
+  languages: string[] | null;
 }
 
 interface NewProviderForm {
@@ -136,8 +135,12 @@ const AdminPanel = () => {
   }, [isAdmin]);
 
   const filteredProviders = providers.filter(provider => {
-    const matchesSearch = provider.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         provider.bio?.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+                         provider.display_name?.toLowerCase().includes(searchLower) ||
+                         provider.specialty?.toLowerCase().includes(searchLower) ||
+                         provider.category?.toLowerCase().includes(searchLower) ||
+                         provider.bio?.toLowerCase().includes(searchLower);
     
     if (filterStatus === "all") return matchesSearch;
     if (filterStatus === "online") return matchesSearch && provider.is_online;
@@ -385,12 +388,17 @@ const AdminPanel = () => {
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h4 className="font-semibold text-foreground truncate">
-                                  Provider #{provider.id.slice(0, 8)}
+                                  {provider.display_name || `Provider #${provider.id.slice(0, 8)}`}
                                 </h4>
                                 {provider.verified && (
                                   <BadgeCheck className="w-4 h-4 text-secondary flex-shrink-0" />
+                                )}
+                                {provider.category && (
+                                  <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md capitalize">
+                                    {provider.category}
+                                  </span>
                                 )}
                               </div>
                               <p className="text-sm text-secondary font-medium">{provider.specialty || 'No specialty'}</p>
