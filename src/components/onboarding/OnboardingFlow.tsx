@@ -6,13 +6,15 @@ import GenderStep from "./GenderStep";
 import DateOfBirthStep from "./DateOfBirthStep";
 import TimeOfBirthStep from "./TimeOfBirthStep";
 import PlaceOfBirthStep from "./PlaceOfBirthStep";
-import PurposeStep from "./PurposeStep";
+import BirthTimeExactnessStep from "./BirthTimeExactnessStep";
+import MajorConcernStep from "./MajorConcernStep";
+import PartnerDetailsStep from "./PartnerDetailsStep";
 import JotshiLogin from "../jotshi/JotshiLogin";
 
 const OnboardingFlow = () => {
   const { currentStep, userData } = useOnboardingStore();
 
-  // Different flows based on role
+  // Enhanced user flow with professional Jotshi fields
   const userSteps = [
     <WelcomeStep key="welcome" />,
     <NameStep key="name" />,
@@ -20,7 +22,9 @@ const OnboardingFlow = () => {
     <DateOfBirthStep key="dob" />,
     <TimeOfBirthStep key="time" />,
     <PlaceOfBirthStep key="place" />,
-    <PurposeStep key="purpose" />,
+    <BirthTimeExactnessStep key="exactness" />,
+    <MajorConcernStep key="concern" />,
+    <PartnerDetailsStep key="partner" />,
   ];
 
   const jotshiSteps = [

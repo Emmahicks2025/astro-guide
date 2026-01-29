@@ -5,22 +5,21 @@ import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-c
 import { SpiritualButton } from "@/components/ui/spiritual-button";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { format } from "date-fns";
-
-const planetPositions = [
-  { planet: 'Sun (Surya)', sign: 'Leo', house: 1, degree: '15°24\'' },
-  { planet: 'Moon (Chandra)', sign: 'Cancer', house: 12, degree: '22°18\'' },
-  { planet: 'Mars (Mangal)', sign: 'Aries', house: 9, degree: '08°42\'' },
-  { planet: 'Mercury (Budh)', sign: 'Virgo', house: 2, degree: '19°30\'' },
-  { planet: 'Jupiter (Guru)', sign: 'Sagittarius', house: 5, degree: '11°15\'' },
-  { planet: 'Venus (Shukra)', sign: 'Libra', house: 3, degree: '25°08\'' },
-  { planet: 'Saturn (Shani)', sign: 'Capricorn', house: 6, degree: '03°55\'' },
-  { planet: 'Rahu', sign: 'Gemini', house: 11, degree: '17°22\'' },
-  { planet: 'Ketu', sign: 'Sagittarius', house: 5, degree: '17°22\'' },
-];
+import NorthIndianKundliChart from "@/components/kundli/NorthIndianKundliChart";
+import PlanetaryTable from "@/components/kundli/PlanetaryTable";
+import { generateSampleKundli } from "@/lib/kundli";
+import { toast } from "sonner";
 
 const MyKundli = () => {
   const navigate = useNavigate();
   const { userData } = useOnboardingStore();
+
+  // Generate Kundli based on user's actual birth data
+  const kundliData = generateSampleKundli(
+    userData.dateOfBirth,
+    userData.timeOfBirth,
+    userData.placeOfBirth
+  );
 
   return (
     <motion.div
@@ -43,10 +42,10 @@ const MyKundli = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <SpiritualButton variant="ghost" size="icon">
+            <SpiritualButton variant="ghost" size="icon" onClick={() => toast.info("Share feature coming soon!")}>
               <Share2 className="w-5 h-5" />
             </SpiritualButton>
-            <SpiritualButton variant="ghost" size="icon">
+            <SpiritualButton variant="ghost" size="icon" onClick={() => toast.info("Download feature coming soon!")}>
               <Download className="w-5 h-5" />
             </SpiritualButton>
           </div>
@@ -80,21 +79,12 @@ const MyKundli = () => {
           </div>
         </SpiritualCard>
 
-        {/* Kundli Chart Placeholder */}
+        {/* Kundli Chart - Now with real visualization */}
         <SpiritualCard variant="elevated" className="overflow-hidden">
           <SpiritualCardContent className="p-6">
             <h3 className="text-lg font-bold font-display mb-4 text-center">Janam Kundli (Birth Chart)</h3>
-            {/* North Indian Style Chart Placeholder */}
-            <div className="aspect-square max-w-sm mx-auto bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl border-2 border-primary/20 flex items-center justify-center">
-              <div className="text-center p-4">
-                <Star className="w-16 h-16 mx-auto mb-4 text-accent" />
-                <p className="text-muted-foreground">
-                  North Indian style Kundli chart
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  (Chart visualization coming soon)
-                </p>
-              </div>
+            <div className="flex justify-center">
+              <NorthIndianKundliChart data={kundliData} size={280} />
             </div>
           </SpiritualCardContent>
         </SpiritualCard>
@@ -102,37 +92,50 @@ const MyKundli = () => {
         {/* Lagna Info */}
         <SpiritualCard variant="golden" className="p-4 text-center">
           <p className="text-sm text-muted-foreground">Lagna (Ascendant)</p>
-          <p className="text-2xl font-bold text-accent">Leo (Simha)</p>
-          <p className="text-sm mt-1">Rising at 15°24'</p>
+          <p className="text-2xl font-bold text-accent">{kundliData.lagnaSign}</p>
+          <p className="text-sm mt-1">
+            Moon Nakshatra: <span className="font-medium">{kundliData.nakshatras.moon}</span> (Pada {kundliData.nakshatras.pada})
+          </p>
         </SpiritualCard>
 
-        {/* Planet Positions */}
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold font-display">Planetary Positions</h3>
-          <SpiritualCard variant="elevated" className="overflow-hidden">
-            <div className="divide-y divide-border">
-              {planetPositions.map((planet) => (
-                <div key={planet.planet} className="p-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium">{planet.planet}</p>
-                    <p className="text-sm text-muted-foreground">in {planet.sign}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-primary">House {planet.house}</p>
-                    <p className="text-xs text-muted-foreground">{planet.degree}</p>
-                  </div>
-                </div>
-              ))}
+        {/* Dasha Info */}
+        {kundliData.dashaInfo && (
+          <SpiritualCard variant="mystic" className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Current Maha Dasha</p>
+                <p className="text-xl font-bold">{kundliData.dashaInfo.currentMahaDasha}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Period</p>
+                <p className="font-medium">{kundliData.dashaInfo.startDate} - {kundliData.dashaInfo.endDate}</p>
+              </div>
             </div>
           </SpiritualCard>
+        )}
+
+        {/* Planet Positions - Using the component */}
+        <section className="space-y-3">
+          <h3 className="text-lg font-bold font-display">Planetary Positions</h3>
+          <PlanetaryTable data={kundliData} />
         </section>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
-          <SpiritualButton variant="primary" size="lg" className="w-full">
+          <SpiritualButton 
+            variant="primary" 
+            size="lg" 
+            className="w-full"
+            onClick={() => toast.info("Detailed analysis coming soon!")}
+          >
             Detailed Analysis
           </SpiritualButton>
-          <SpiritualButton variant="outline" size="lg" className="w-full">
+          <SpiritualButton 
+            variant="outline" 
+            size="lg" 
+            className="w-full"
+            onClick={() => toast.info("Dasha periods coming soon!")}
+          >
             Dasha Periods
           </SpiritualButton>
         </div>
