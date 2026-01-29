@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Shield, Users, UserCheck, UserX, Plus, Pencil, Trash2, 
   Search, Filter, Star, Clock, Phone, MessageCircle, Eye, Check, X,
-  Sparkles, BadgeCheck, IndianRupee, Languages, ToggleLeft, ToggleRight
+  Sparkles, BadgeCheck, IndianRupee, Languages, ToggleLeft, ToggleRight,
+  Upload, Camera, Bot, Brain
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
@@ -37,6 +38,7 @@ interface JotshiProfile {
   avatar_url: string | null;
   category: string | null;
   languages: string[] | null;
+  ai_personality: string | null;
 }
 
 interface NewProviderForm {
@@ -78,6 +80,8 @@ const AdminPanel = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<JotshiProfile | null>(null);
   const [activeTab, setActiveTab] = useState("providers");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newProvider, setNewProvider] = useState<NewProviderForm>({
     email: "",
@@ -183,6 +187,49 @@ const AdminPanel = () => {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedProvider || !event.target.files || event.target.files.length === 0) return;
+    
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${selectedProvider.id}.${fileExt}`;
+    
+    setUploadingImage(true);
+    
+    try {
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('provider-avatars')
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('provider-avatars')
+        .getPublicUrl(fileName);
+      
+      // Update provider profile
+      const { error: updateError } = await supabase
+        .from('jotshi_profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', selectedProvider.id);
+      
+      if (updateError) throw updateError;
+      
+      setSelectedProvider({ ...selectedProvider, avatar_url: publicUrl });
+      setProviders(prev => prev.map(p => 
+        p.id === selectedProvider.id ? { ...p, avatar_url: publicUrl } : p
+      ));
+      toast.success("Profile image updated!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleUpdateProvider = async () => {
     if (!selectedProvider) return;
 
@@ -194,7 +241,10 @@ const AdminPanel = () => {
         hourly_rate: selectedProvider.hourly_rate,
         bio: selectedProvider.bio,
         is_online: selectedProvider.is_online,
-        verified: selectedProvider.verified
+        verified: selectedProvider.verified,
+        display_name: selectedProvider.display_name,
+        ai_personality: selectedProvider.ai_personality,
+        avatar_url: selectedProvider.avatar_url
       })
       .eq('id', selectedProvider.id);
 
@@ -379,12 +429,25 @@ const AdminPanel = () => {
                           {/* Avatar & Status */}
                           <div className="flex items-start gap-4 flex-1">
                             <div className="relative">
-                              <div className="w-14 h-14 rounded-xl bg-gradient-spiritual flex items-center justify-center">
-                                <Sparkles className="w-6 h-6 text-primary-foreground" />
+                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-spiritual flex items-center justify-center">
+                                {provider.avatar_url ? (
+                                  <img 
+                                    src={provider.avatar_url} 
+                                    alt={provider.display_name || 'Provider'} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Sparkles className="w-6 h-6 text-primary-foreground" />
+                                )}
                               </div>
                               <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
                                 provider.is_online ? 'bg-green-500' : 'bg-muted-foreground/40'
                               }`} />
+                              {provider.ai_personality && (
+                                <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                  <Bot className="w-3 h-3 text-primary-foreground" />
+                                </div>
+                              )}
                             </div>
                             
                             <div className="flex-1 min-w-0">
@@ -490,13 +553,71 @@ const AdminPanel = () => {
 
       {/* Edit Provider Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Provider</DialogTitle>
           </DialogHeader>
           
           {selectedProvider && (
             <div className="space-y-4">
+              {/* Profile Image Upload */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  Profile Image
+                </Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-border">
+                    {selectedProvider.avatar_url ? (
+                      <img 
+                        src={selectedProvider.avatar_url} 
+                        alt="Provider" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Sparkles className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <SpiritualButton
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                    >
+                      {uploadingImage ? (
+                        <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    </SpiritualButton>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG up to 5MB
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Display Name */}
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <SpiritualInput
+                  value={selectedProvider.display_name || ""}
+                  onChange={(e) => setSelectedProvider({ ...selectedProvider, display_name: e.target.value })}
+                  placeholder="Provider's display name"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Specialty</Label>
                 <Select 
@@ -545,6 +666,25 @@ const AdminPanel = () => {
                   value={selectedProvider.bio || ""}
                   onChange={(e) => setSelectedProvider({ ...selectedProvider, bio: e.target.value })}
                   rows={3}
+                  placeholder="Brief description of the provider..."
+                />
+              </div>
+
+              {/* AI Personality Section */}
+              <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <Label className="flex items-center gap-2 text-primary">
+                  <Brain className="w-4 h-4" />
+                  AI Personality Traits (Admin Only)
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Define how the AI should respond when acting as this provider. This is only visible to admins.
+                </p>
+                <Textarea
+                  value={selectedProvider.ai_personality || ""}
+                  onChange={(e) => setSelectedProvider({ ...selectedProvider, ai_personality: e.target.value })}
+                  rows={4}
+                  placeholder="Example: Speak in a calm, wise manner. Use traditional Vedic terminology. Be empathetic and supportive. Always suggest remedies with explanations. End responses with a blessing."
+                  className="bg-background"
                 />
               </div>
 
