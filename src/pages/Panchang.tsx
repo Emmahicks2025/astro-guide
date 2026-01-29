@@ -149,8 +149,39 @@ const Panchang = () => {
 
         {!loading && (
           <>
+            {/* Personalization Banner */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 rounded-2xl p-4 border border-primary/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-spiritual flex items-center justify-center shadow-lg">
+                  <Star className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                      ✨ Personalized for You
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium mt-1">
+                    {userData.fullName ? `${userData.fullName}'s` : 'Your'} Daily Panchang
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    📍 Based on your birthplace: <span className="text-primary font-medium">{userLocation}</span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Date & Location Header */}
-            <SpiritualCard variant="spiritual" className="p-4 text-center">
+            <SpiritualCard variant="spiritual" className="p-4 text-center relative overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <span className="text-[10px] bg-green-500/20 text-green-600 px-2 py-0.5 rounded-full font-medium">
+                  🔴 LIVE
+                </span>
+              </div>
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Calendar className="w-5 h-5" />
                 <span className="font-semibold">{format(today, 'EEEE, MMMM d, yyyy')}</span>
@@ -158,39 +189,39 @@ const Panchang = () => {
               <p className="text-sm text-muted-foreground">
                 {currentPanchang.month} | {currentPanchang.paksha}
               </p>
-              <p className="text-xs text-primary mt-1">
-                📍 {userLocation}
-              </p>
               {currentPanchang.samvat && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {currentPanchang.samvat}
+                <p className="text-sm font-medium text-primary mt-2">
+                  🪷 {currentPanchang.samvat}
                 </p>
               )}
             </SpiritualCard>
 
-            {/* Sun & Moon Times */}
-            <div className="grid grid-cols-2 gap-3">
-              <SpiritualCard variant="golden" className="p-4 text-center">
-                <Sun className="w-8 h-8 mx-auto mb-2 text-accent" />
-                <p className="text-xs text-muted-foreground">Sunrise</p>
-                <p className="font-bold">{currentPanchang.sunrise}</p>
-                <div className="mt-2 pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground">Sunset</p>
-                  <p className="font-medium">{currentPanchang.sunset}</p>
-                </div>
-              </SpiritualCard>
-              <SpiritualCard variant="mystic" className="p-4 text-center">
-                <Moon className="w-8 h-8 mx-auto mb-2 text-secondary" />
-                <p className="text-xs text-muted-foreground">Moonrise</p>
-                <p className="font-bold">{currentPanchang.moonrise}</p>
-                <div className="mt-2 pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground">Moonset</p>
-                  <p className="font-medium">{currentPanchang.moonset}</p>
-                </div>
-              </SpiritualCard>
+            {/* Sun & Moon Times - Location Based */}
+            <div className="space-y-2">
+              <p className="text-xs text-center text-muted-foreground">
+                ☀️ Calculated for <span className="text-primary font-medium">{userLocation}</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <SpiritualCard variant="golden" className="p-4 text-center">
+                  <Sun className="w-8 h-8 mx-auto mb-2 text-accent" />
+                  <p className="text-xs text-muted-foreground">Sunrise</p>
+                  <p className="font-bold">{currentPanchang.sunrise}</p>
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">Sunset</p>
+                    <p className="font-medium">{currentPanchang.sunset}</p>
+                  </div>
+                </SpiritualCard>
+                <SpiritualCard variant="mystic" className="p-4 text-center">
+                  <Moon className="w-8 h-8 mx-auto mb-2 text-secondary" />
+                  <p className="text-xs text-muted-foreground">Moonrise</p>
+                  <p className="font-bold">{currentPanchang.moonrise}</p>
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">Moonset</p>
+                    <p className="font-medium">{currentPanchang.moonset}</p>
+                  </div>
+                </SpiritualCard>
+              </div>
             </div>
-
-            {/* Panchang Details */}
             <section className="space-y-3">
               <h3 className="text-lg font-bold font-display flex items-center gap-2">
                 <Star className="w-5 h-5 text-primary" />
