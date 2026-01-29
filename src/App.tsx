@@ -16,6 +16,7 @@ import MyKundli from "./pages/MyKundli";
 import WalletPage from "./pages/Wallet";
 import SettingsPage from "./pages/Settings";
 import Explore from "./pages/Explore";
+import AdminPanel from "./pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/admin" element={<AdminPanel />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
