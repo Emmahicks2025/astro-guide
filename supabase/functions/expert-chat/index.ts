@@ -16,9 +16,9 @@ serve(async (req) => {
     
     console.log("Expert chat request:", { expertId, expertName, messageCount: messages?.length });
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyDZ8Cm7sNY_Zw3qpC96xqKA9lO2NS1uwyE";
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     // Build system prompt based on expert personality
@@ -28,19 +28,38 @@ serve(async (req) => {
       ? `${expertPersonality}\n\nYou are ${expertName}. Respond as this expert would, maintaining their unique personality and expertise.`
       : defaultPersonality;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Convert messages to Gemini format
+    const contents = [];
+    
+    // Add system as first user message
+    if (messages.length > 0 && messages[0].role === 'system') {
+      contents.push({
+        role: 'user',
+        parts: [{ text: systemPrompt + '\n\n' + messages[0].content }]
+      });
+      messages.shift(); // remove system
+    } else {
+      contents.push({
+        role: 'user',
+        parts: [{ text: systemPrompt }]
+      });
+    }
+
+    // Add conversation history
+    for (const msg of messages) {
+      contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      });
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
+        contents: contents,
       }),
     });
 
@@ -58,14 +77,57 @@ serve(async (req) => {
         });
       }
       const text = await response.text();
-      console.error("AI gateway error:", response.status, text);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
+      console.error("Gemini API error:", response.status, text);
+      return new Response(JSON.stringify({ error: "AI API error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
+    // Transform Gemini SSE to OpenAI-like SSE
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+
+    (async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.slice(6);
+              if (jsonStr.trim() === '') continue;
+              
+              try {
+                const data = JSON.parse(jsonStr);
+                if (data.candidates && data.candidates[0]?.content?.parts) {
+                  const text = data.candidates[0].content.parts.map((p: any) => p.text).join('');
+                  if (text) {
+                    const openaiChunk = `data: {"choices":[{"delta":{"content":"${text.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"}}]}\n\n`;
+                    await writer.write(new TextEncoder().encode(openaiChunk));
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing Gemini response:', e);
+              }
+            }
+          }
+        }
+        await writer.write(new TextEncoder().encode('data: [DONE]\n\n'));
+      } catch (error) {
+        console.error('Stream error:', error);
+      } finally {
+        await writer.close();
+      }
+    })();
+
+    return new Response(readable, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
