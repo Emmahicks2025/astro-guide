@@ -18,7 +18,6 @@ import SettingsPage from "./pages/Settings";
 import Explore from "./pages/Explore";
 import AdminPanel from "./pages/AdminPanel";
 import ProviderRegister from "./pages/ProviderRegister";
-import Install from "./pages/Install";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +42,6 @@ const App = () => (
             <Route path="/explore" element={<Explore />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/provider-register" element={<ProviderRegister />} />
-            <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

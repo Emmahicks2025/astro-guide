@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Hand, Heart, Sun, Star, Wallet, User, Settings, Book, Calendar, HelpCircle, Download, Share, Plus, X } from "lucide-react";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { MessageCircle, Hand, Heart, Sun, Star, Wallet, User, Settings, Book, Calendar, HelpCircle } from "lucide-react";
 import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
 import { SpiritualButton } from "@/components/ui/spiritual-button";
 import { useOnboardingStore } from "@/stores/onboardingStore";
@@ -57,26 +57,6 @@ const UserDashboard = () => {
     setWalkthroughComplete 
   } = useWalkthroughStore();
   const navigate = useNavigate();
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  // Check if app is already installed or running in standalone mode
-  useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches;
-    setIsStandalone(standalone);
-    
-    if (!standalone) {
-      const dismissed = localStorage.getItem('install-banner-dismissed');
-      if (!dismissed) {
-        setShowInstallBanner(true);
-      }
-    }
-  }, []);
-
-  const dismissInstallBanner = () => {
-    setShowInstallBanner(false);
-    localStorage.setItem('install-banner-dismissed', Date.now().toString());
-  };
 
   // Auto-open walkthrough for first-time users
   useEffect(() => {
@@ -145,44 +125,6 @@ const UserDashboard = () => {
             </div>
           </div>
         </header>
-
-        {/* Install App Banner */}
-        <AnimatePresence>
-          {showInstallBanner && !isStandalone && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-3">
-                <div className="container mx-auto flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center shrink-0">
-                    <Download className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">Install AstroGuru App</p>
-                    <p className="text-xs opacity-90">
-                      Tap <Share className="w-3 h-3 inline-block mx-0.5" /> then "Add to Home Screen" <Plus className="w-3 h-3 inline-block mx-0.5" />
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/install')}
-                    className="shrink-0 px-3 py-1.5 rounded-lg bg-primary-foreground/20 text-xs font-semibold hover:bg-primary-foreground/30 transition-colors"
-                  >
-                    How to
-                  </button>
-                  <button
-                    onClick={dismissInstallBanner}
-                    className="shrink-0 p-1 rounded-full hover:bg-primary-foreground/20 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <main className="container mx-auto px-4 py-6 space-y-8">
           {/* Welcome Section */}
