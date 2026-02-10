@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AstroGuru Design System - Vedic Astrology Spiritual Theme
+   Colors inspired by Indian spirituality: Saffron, Purple, Gold */
+
+@layer base {
+  :root {
+    /* Base backgrounds - warm ivory with a touch of warmth */
+    --background: 38 40% 97%;
+    --foreground: 260 50% 12%;
+
+    /* Card surfaces - slightly richer */
+    --card: 38 35% 95%;
+    --card-foreground: 260 50% 12%;
+
+    /* Popover */
+    --popover: 38 40% 97%;
+    --popover-foreground: 260 50% 12%;
+
+    /* Primary - Vivid Saffron Orange */
+    --primary: 24 100% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Electric Indigo */
+    --secondary: 262 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted - Soft lavender tones */
+    --muted: 260 15% 91%;
+    --muted-foreground: 260 25% 42%;
+
+    /* Accent - Brilliant Gold */
+    --accent: 43 100% 50%;
+    --accent-foreground: 260 50% 12%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 260 18% 86%;
+    --input: 260 18% 86%;
+    --ring: 24 100% 52%;
+
+    --radius: 0.75rem;
+
+    /* Extended palette - more saturated */
+    --saffron: 24 100% 52%;
+    --saffron-light: 30 95% 68%;
+    --saffron-dark: 20 90% 42%;
+    
+    --purple: 262 70% 50%;
+    --purple-light: 265 60% 68%;
+    --purple-dark: 258 75% 35%;
+    
+    --gold: 43 100% 50%;
+    --gold-light: 46 95% 66%;
+    --gold-dark: 40 90% 42%;
+    
+    --cream: 38 40% 97%;
+    --cream-dark: 35 22% 90%;
+
+    /* Gradients - more vivid and multi-stop */
+    --gradient-spiritual: linear-gradient(135deg, hsl(24 100% 52%) 0%, hsl(340 80% 55%) 50%, hsl(262 70% 50%) 100%);
+    --gradient-sunset: linear-gradient(180deg, hsl(350 85% 60%) 0%, hsl(24 100% 52%) 35%, hsl(43 100% 50%) 70%, hsl(46 95% 66%) 100%);
+    --gradient-mystic: linear-gradient(135deg, hsl(258 75% 35%) 0%, hsl(262 70% 50%) 40%, hsl(280 65% 60%) 70%, hsl(300 55% 65%) 100%);
+    --gradient-golden: linear-gradient(135deg, hsl(40 90% 42%) 0%, hsl(43 100% 50%) 40%, hsl(46 95% 66%) 100%);
+
+    /* Shadows - more colorful and pronounced */
+    --shadow-spiritual: 0 6px 24px -4px hsl(24 100% 52% / 0.3), 0 2px 8px -2px hsl(262 70% 50% / 0.15);
+    --shadow-mystic: 0 6px 24px -4px hsl(262 70% 50% / 0.3), 0 2px 8px -2px hsl(280 65% 60% / 0.15);
+    --shadow-golden: 0 6px 24px -4px hsl(43 100% 50% / 0.35), 0 2px 8px -2px hsl(40 90% 42% / 0.15);
+    --shadow-soft: 0 4px 16px -2px hsl(260 50% 12% / 0.1);
+
+    /* Sidebar */
+    --sidebar-background: 38 35% 95%;
+    --sidebar-foreground: 260 50% 12%;
+    --sidebar-primary: 24 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 15% 91%;
+    --sidebar-accent-foreground: 260 50% 12%;
+    --sidebar-border: 260 18% 86%;
+    --sidebar-ring: 24 100% 52%;
+  }
+
+  .dark {
+    --background: 258 45% 7%;
+    --foreground: 38 35% 95%;
+
+    --card: 258 40% 11%;
+    --card-foreground: 38 35% 95%;
+
+    --popover: 258 40% 11%;
+    --popover-foreground: 38 35% 95%;
+
+    --primary: 24 100% 58%;
+    --primary-foreground: 258 45% 8%;
+
+    --secondary: 265 55% 35%;
+    --secondary-foreground: 38 35% 95%;
+
+    --muted: 258 35% 16%;
+    --muted-foreground: 260 20% 62%;
+
+    --accent: 43 90% 52%;
+    --accent-foreground: 258 45% 8%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 258 35% 18%;
+    --input: 258 35% 18%;
+    --ring: 24 100% 58%;
+
+    --sidebar-background: 258 40% 9%;
+    --sidebar-foreground: 38 35% 95%;
+    --sidebar-primary: 24 100% 58%;
+    --sidebar-primary-foreground: 258 45% 8%;
+    --sidebar-accent: 258 35% 16%;
+    --sidebar-accent-foreground: 38 35% 95%;
+    --sidebar-border: 258 35% 18%;
+    --sidebar-ring: 24 100% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Spiritual gradients */
+  .bg-gradient-spiritual {
+    background: var(--gradient-spiritual);
+  }
+
+  .bg-gradient-sunset {
+    background: var(--gradient-sunset);
+  }
+
+  .bg-gradient-mystic {
+    background: var(--gradient-mystic);
+  }
+
+  .bg-gradient-golden {
+    background: var(--gradient-golden);
+  }
+
+  /* Glow effects */
+  .glow-spiritual {
+    box-shadow: var(--shadow-spiritual);
+  }
+
+  .glow-mystic {
+    box-shadow: var(--shadow-mystic);
+  }
+
+  .glow-golden {
+    box-shadow: var(--shadow-golden);
+  }
+
+  /* Text gradients */
+  .text-gradient-spiritual {
+    background: var(--gradient-spiritual);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-golden {
+    background: var(--gradient-golden);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Mystical animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+  }
+}
