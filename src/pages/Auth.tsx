@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Mail, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Mail, Lock, Eye, EyeOff, Sun, Moon, Download, Share, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SpiritualButton } from "@/components/ui/spiritual-button";
 import { SpiritualInput } from "@/components/ui/spiritual-input";
@@ -21,6 +21,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +32,19 @@ const Auth = () => {
       navigate('/');
     }
   }, [user, loading, navigate]);
+
+  // Show install banner if not standalone and not dismissed
+  useEffect(() => {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    if (!isStandalone && !localStorage.getItem('install-banner-dismissed')) {
+      setShowInstallBanner(true);
+    }
+  }, []);
+
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('install-banner-dismissed', Date.now().toString());
+  };
 
   const validateForm = () => {
     try {
@@ -99,7 +113,46 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
+      {/* Install App Banner */}
+      <AnimatePresence>
+        {showInstallBanner && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden shrink-0"
+          >
+            <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-3">
+              <div className="flex items-center gap-3 max-w-md mx-auto">
+                <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center shrink-0">
+                  <Download className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">Install AstroGuru App</p>
+                  <p className="text-xs opacity-90">
+                    Tap <Share className="w-3 h-3 inline-block mx-0.5" /> then "Add to Home Screen" <Plus className="w-3 h-3 inline-block mx-0.5" />
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/install')}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-primary-foreground/20 text-xs font-semibold hover:bg-primary-foreground/30 transition-colors"
+                >
+                  How to
+                </button>
+                <button
+                  onClick={dismissInstallBanner}
+                  className="shrink-0 p-1 rounded-full hover:bg-primary-foreground/20 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex-1 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
@@ -236,6 +289,7 @@ const Auth = () => {
           Your journey to cosmic enlightenment begins here ✨
         </p>
       </motion.div>
+      </div>
     </div>
   );
 };
