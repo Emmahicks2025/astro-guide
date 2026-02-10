@@ -5,7 +5,7 @@ import {
   Search, Filter, Star, Clock, Phone, MessageCircle, Eye, Check, X,
   Sparkles, BadgeCheck, IndianRupee, Languages, ToggleLeft, ToggleRight,
   Upload, Camera, Bot, Brain, AlertCircle, Mail, CheckCircle, XCircle,
-  CheckSquare, Square, MinusSquare
+  CheckSquare, Square, MinusSquare, LogOut
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
@@ -506,6 +506,17 @@ const AdminPanel = () => {
               {pendingProviders.length} Pending
             </Badge>
           )}
+          <SpiritualButton
+            variant="ghost"
+            size="icon"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate('/auth');
+            }}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="w-5 h-5" />
+          </SpiritualButton>
         </div>
       </header>
 
