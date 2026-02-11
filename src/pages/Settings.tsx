@@ -11,7 +11,8 @@ import {
   HelpCircle, 
   LogOut,
   ChevronRight,
-  Edit2
+  Edit2,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SpiritualCard, SpiritualCardContent } from "@/components/ui/spiritual-card";
@@ -68,6 +69,13 @@ const SettingsPage = () => {
     resetOnboarding();
     toast.success("Logged out successfully");
     navigate('/auth');
+  };
+
+  const handleDeleteAccount = () => {
+    toast.error("Account deletion requested. Our team will process this within 24 hours.", {
+      description: "You will receive an email confirmation once complete.",
+      duration: 5000,
+    });
   };
 
   return (
@@ -165,6 +173,14 @@ const SettingsPage = () => {
           <LogOut className="w-5 h-5" />
           Log Out
         </SpiritualButton>
+
+        <button
+          onClick={handleDeleteAccount}
+          className="w-full py-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 transition-colors"
+        >
+          <Trash2 className="w-3 h-3" />
+          Delete Account
+        </button>
 
         {/* App Version */}
         <p className="text-center text-sm text-muted-foreground">

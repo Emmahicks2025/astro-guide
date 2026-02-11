@@ -746,6 +746,11 @@ export function ExpertConsultationDialog({
             </div>
           </TabsContent>
         </Tabs>
+        <div className="px-4 py-2 border-t border-border bg-muted/30">
+          <p className="text-[10px] text-center text-muted-foreground leading-tight">
+            Disclaimer: Consultations are for spiritual guidance and entertainment purposes only. AI-generated responses should not replace professional medical, legal, or financial advice.
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );

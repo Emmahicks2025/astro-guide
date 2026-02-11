@@ -16,7 +16,7 @@ serve(async (req) => {
     
     console.log("Expert chat request:", { expertId, expertName, messageCount: messages?.length });
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyDZ8Cm7sNY_Zw3qpC96xqKA9lO2NS1uwyE";
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       throw new Error("GEMINI_API_KEY is not configured");
     }
@@ -28,25 +28,12 @@ serve(async (req) => {
       ? `${expertPersonality}\n\nYou are ${expertName}. Respond as this expert would, maintaining their unique personality and expertise.`
       : defaultPersonality;
 
-    // Convert messages to Gemini format
-    const contents = [];
-    
-    // Add system as first user message
-    if (messages.length > 0 && messages[0].role === 'system') {
-      contents.push({
-        role: 'user',
-        parts: [{ text: systemPrompt + '\n\n' + messages[0].content }]
-      });
-      messages.shift(); // remove system
-    } else {
-      contents.push({
-        role: 'user',
-        parts: [{ text: systemPrompt }]
-      });
-    }
+    // Filter out any system messages from the history to avoid confusion
+    const history = messages.filter((msg: any) => msg.role !== 'system');
 
-    // Add conversation history
-    for (const msg of messages) {
+    // Convert messages to Gemini format with alternating roles
+    const contents = [];
+    for (const msg of history) {
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
@@ -59,6 +46,9 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }]
+        },
         contents: contents,
       }),
     });

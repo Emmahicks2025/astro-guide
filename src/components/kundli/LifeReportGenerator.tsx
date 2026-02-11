@@ -172,6 +172,10 @@ const LifeReportGenerator = ({ kundliData, userName, dateOfBirth }: LifeReportGe
             >
               Generate New Report
             </SpiritualButton>
+
+            <p className="text-[10px] text-center text-muted-foreground mt-4 px-4 leading-tight">
+              Note: This report is generated using Vedic astrology principles and AI analysis. It is intended for spiritual guidance and entertainment only.
+            </p>
           </motion.div>
         </AnimatePresence>
       )}
