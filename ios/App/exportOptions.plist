@@ -6,11 +6,6 @@
     <string>export</string>
     <key>method</key>
     <string>app-store</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>com.astroguide.app</key>
-        <string>App Store Provisioning Profile Name</string>
-    </dict>
     <key>signingCertificate</key>
     <string>Apple Distribution</string>
     <key>signingStyle</key>
@@ -19,7 +14,11 @@
     <true/>
     <key>teamID</key>
     <string>LZ57VL6474</string>
+    <key>uploadBitcode</key>
+    <false/>
     <key>uploadSymbols</key>
     <true/>
+    <key>compileBitcode</key>
+    <false/>
 </dict>
 </plist>

@@ -66,8 +66,27 @@ jobs:
 
           # Build and upload using xcodebuild
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
-          xcodebuild -exportArchive -archivePath App.xcarchive -exportOptionsPlist exportOptions.plist -exportPath output -allowProvisioningUpdates -authenticationKeyIssuerID $APP_STORE_CONNECT_API_ISSUER_ID -authenticationKeyID $APP_STORE_CONNECT_API_KEY_ID -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
           
-          # Upload via altool or xcrun
-          xcrun altool --upload-app --type ios --file output/App.ipa --apiKey $APP_STORE_CONNECT_API_KEY_ID --apiIssuer $APP_STORE_CONNECT_API_ISSUER_ID
+          # Archive the app
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath "$PWD/build/App.xcarchive" \
+            clean archive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=LZ57VL6474
+          
+          # Export the archive
+          xcodebuild -exportArchive \
+            -archivePath "$PWD/build/App.xcarchive" \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath "$PWD/build" \
+            -allowProvisioningUpdates
+          
+          # Upload to TestFlight using App Store Connect API
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$PWD/build/App.ipa" \
+            --apiKey $APP_STORE_CONNECT_API_KEY_ID \
+            --apiIssuer $APP_STORE_CONNECT_API_ISSUER_ID
