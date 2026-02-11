@@ -47,7 +47,7 @@ jobs:
           cd ios/App
           
           # Build and archive with automatic signing
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
