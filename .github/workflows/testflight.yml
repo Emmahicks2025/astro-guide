@@ -39,6 +39,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Normalize password: allow special placeholder __EMPTY__ to mean empty password
+          P12_PASS="$P12_PASSWORD"
+          if [ "$P12_PASS" = "__EMPTY__" ]; then
+            P12_PASS=""
+          fi
+
           # Create keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
@@ -53,12 +59,12 @@ jobs:
           echo "Runner p12 sha256:" $(shasum -a 256 $RUNNER_TEMP/certificate.p12 | awk '{print $1}')
 
           # Validate p12 with provided password to catch mismatch early
-          openssl pkcs12 -info -in $RUNNER_TEMP/certificate.p12 -passin pass:$P12_PASSWORD -nokeys -clcerts >/tmp/p12_check.txt
+          openssl pkcs12 -info -in $RUNNER_TEMP/certificate.p12 -passin pass:$P12_PASS -nokeys -clcerts >/tmp/p12_check.txt
           head -n 5 /tmp/p12_check.txt
 
           security import $RUNNER_TEMP/certificate.p12 \
             -k $KEYCHAIN_PATH \
-            -P "$P12_PASSWORD" \
+            -P "$P12_PASS" \
             -A \
             -T /usr/bin/codesign \
             -T /usr/bin/security
