@@ -49,6 +49,9 @@ jobs:
           # Import certificate
           printf "%s" "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/certificate.p12
 
+          # Show checksum to verify secret matches local file
+          echo "Runner p12 sha256:" $(shasum -a 256 $RUNNER_TEMP/certificate.p12 | awk '{print $1}')
+
           # Validate p12 with provided password to catch mismatch early
           openssl pkcs12 -info -in $RUNNER_TEMP/certificate.p12 -passin pass:$P12_PASSWORD -nokeys -clcerts >/tmp/p12_check.txt
           head -n 5 /tmp/p12_check.txt
