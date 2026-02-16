@@ -39,6 +39,10 @@ jobs:
         run: |
           set -euo pipefail
           
+          # Debug password
+          echo "Password length: ${#P12_PASSWORD}"
+          echo "Password starts with: ${P12_PASSWORD:0:4}..."
+          
           # Create keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
