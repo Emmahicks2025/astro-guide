@@ -85,6 +85,29 @@ jobs:
           
           cd ios/App
           
+          # Create export options plist
+          cat > exportOptions.plist << EOF
+          <?xml version="10.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>$TEAM_ID</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.astroguruai.app</key>
+                  <string>5174c695-432d-4b2f-af98-a29750ecddd8</string>
+              </dict>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>signingCertificate</key>
+              <string>Apple Distribution</string>
+          </dict>
+          </plist>
+          EOF
+          
           # Build and archive with manual signing
           xcodebuild -project App.xcodeproj \
             -scheme App \
